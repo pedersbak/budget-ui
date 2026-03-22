@@ -21,7 +21,7 @@ export const NetworkLink: React.FC<NetworkLinkProps> = ({
 }) => {
   const midX = (sourceX + targetX) / 2;
   const midY = (sourceY + targetY) / 2;
-  const stroke = link.color ?? "#aab4c0";
+  const stroke = link.color ?? "#2a3347";
 
   // Normalise: prefer the labels array, fall back to legacy label string
   const allLabels: string[] = link.labels?.length
@@ -69,8 +69,8 @@ export const NetworkLink: React.FC<NetworkLinkProps> = ({
             width={labelW}
             height={PILL_H}
             rx={PILL_R}
-            fill="white"
-            stroke="#e0e3e8"
+            fill="#1e2638"
+            stroke="#2a3347"
             strokeWidth={0.8}
             opacity={0.95}
           />
@@ -78,7 +78,7 @@ export const NetworkLink: React.FC<NetworkLinkProps> = ({
             x={midX}
             y={midY + FONT / 2 - 1}
             textAnchor="middle"
-            fill="#555"
+            fill="#e2e8f0"
             fontSize={FONT}
             fontFamily="system-ui, sans-serif"
           >
@@ -97,15 +97,15 @@ export const NetworkLink: React.FC<NetworkLinkProps> = ({
                 width={moreW}
                 height={PILL_H}
                 rx={PILL_R}
-                fill="#e8f0fe"
-                stroke="#4285f4"
+                fill="#0e1e3d"
+                stroke="#4f9cf9"
                 strokeWidth={0.8}
               />
               <text
                 x={midX + labelW / 2 + 3 + moreW / 2}
                 y={midY + FONT / 2 - 1}
                 textAnchor="middle"
-                fill="#4285f4"
+                fill="#4f9cf9"
                 fontSize={FONT}
                 fontWeight="bold"
                 fontFamily="system-ui, sans-serif"

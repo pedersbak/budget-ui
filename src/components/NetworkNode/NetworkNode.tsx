@@ -38,15 +38,15 @@ function getDefaultIcon(type: string): string {
 function getNodeColors(type: string): { bg: string; border: string } {
   switch (type) {
     case "person":
-      return { bg: "#e8f0fe", border: "#4285f4" };
+      return { bg: "#2a2310", border: "#f6c90e" };
     case "company":
-      return { bg: "#e6f4ea", border: "#34a853" };
+      return { bg: "#0e1e3d", border: "#4f9cf9" };
     case "device":
-      return { bg: "#fce8e6", border: "#ea4335" };
+      return { bg: "#2a100e", border: "#f87171" };
     case "server":
-      return { bg: "#fff3e0", border: "#fb8c00" };
+      return { bg: "#2a1a08", border: "#fb923c" };
     default:
-      return { bg: "#f3e8fd", border: "#9c27b0" };
+      return { bg: "#1e1228", border: "#a78bfa" };
   }
 }
 
@@ -57,6 +57,10 @@ export interface NetworkNodeProps {
   onMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
   /** Called when the node is clicked (not dragged). */
   onClick?: (node: NetworkNodeData) => void;
+  /** Called when the pointer enters the node. */
+  onMouseEnter?: () => void;
+  /** Called when the pointer leaves the node. */
+  onMouseLeave?: () => void;
   /**
    * When true the node slowly pulses to indicate it is the primary/focus node.
    * Requires the consuming app to opt in — false by default.
@@ -76,6 +80,8 @@ export const NetworkNode: React.FC<NetworkNodeProps> = ({
   isDragging = false,
   onMouseDown,
   onClick,
+  onMouseEnter,
+  onMouseLeave,
   isPrimary = false,
 }) => {
   const { bg, border } = getNodeColors(node.type);
@@ -102,6 +108,8 @@ export const NetworkNode: React.FC<NetworkNodeProps> = ({
         transition: isDragging ? "none" : "transform 0.1s ease",
       }}
       onMouseDown={onMouseDown}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       onClick={() => onClick?.(node)}
     >
       {/* Icon circle */}
@@ -149,7 +157,7 @@ export const NetworkNode: React.FC<NetworkNodeProps> = ({
         style={{
           fontSize: 10,
           fontWeight: 600,
-          color: "#1a1a1a",
+          color: "#e2e8f0",
           textAlign: "center",
           maxWidth: NODE_SIZE + 32,
           overflow: "hidden",

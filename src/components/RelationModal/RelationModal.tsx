@@ -22,7 +22,7 @@ export const RelationModal: React.FC<RelationModalProps> = ({ labels, onClose })
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.35)",
+        background: "rgba(0,0,0,0.7)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -32,9 +32,10 @@ export const RelationModal: React.FC<RelationModalProps> = ({ labels, onClose })
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#fff",
+          background: "#161b27",
           borderRadius: 12,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+          border: "1px solid #1e2638",
           padding: "1.5rem",
           minWidth: 280,
           maxWidth: 480,
@@ -42,7 +43,7 @@ export const RelationModal: React.FC<RelationModalProps> = ({ labels, onClose })
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-          <h3 style={{ margin: 0, fontSize: "1rem", color: "#1a1a1a" }}>
+          <h3 style={{ margin: 0, fontSize: "1rem", color: "#e2e8f0" }}>
             Relations ({labels.length})
           </h3>
           <button
@@ -52,7 +53,7 @@ export const RelationModal: React.FC<RelationModalProps> = ({ labels, onClose })
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "#888",
+              color: "#8892a4",
               lineHeight: 1,
               padding: "0 4px",
             }}
@@ -68,10 +69,10 @@ export const RelationModal: React.FC<RelationModalProps> = ({ labels, onClose })
               style={{
                 padding: "7px 12px",
                 borderRadius: 6,
-                background: i % 2 === 0 ? "#f8f9fa" : "#fff",
+                background: i % 2 === 0 ? "#0d1117" : "#161b27",
                 fontSize: 13,
-                color: "#333",
-                border: "1px solid #eee",
+                color: "#e2e8f0",
+                border: "1px solid #2a3347",
               }}
             >
               {label}

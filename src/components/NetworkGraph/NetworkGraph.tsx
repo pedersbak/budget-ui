@@ -15,6 +15,8 @@ export interface NetworkGraphProps {
   height?: number | string;
   /** Called when a node is clicked (not dragged). */
   onNodeClick?: (node: NetworkNodeData) => void;
+  /** Called when the pointer enters/leaves a node. Passes null on leave. */
+  onNodeHover?: (node: NetworkNodeData | null) => void;
   /**
    * ID of the node to highlight as the primary/focus node with a pulse animation.
    * Opt-in: has no effect unless set.
@@ -37,6 +39,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   width = "100%",
   height = 600,
   onNodeClick,
+  onNodeHover,
   primaryNodeId,
   style,
   className,
@@ -167,6 +170,8 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           isDragging={draggingNodeId === node.id}
           isPrimary={primaryNodeId !== undefined && node.id === primaryNodeId}
           onMouseDown={(e) => handleNodeMouseDown(node.id, e)}
+          onMouseEnter={() => onNodeHover?.(node)}
+          onMouseLeave={() => onNodeHover?.(null)}
           onClick={(n) => { if (!didDragRef.current) onNodeClick?.(n); }}
         />
       ))}
