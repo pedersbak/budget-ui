@@ -22,7 +22,7 @@ export type { LoginFormProps } from "./components/LoginForm/LoginForm";
 export type { RegisterFormProps } from "./components/RegisterForm/RegisterForm";
 
 // Network data types
-export type { NetworkNodeData, NetworkLinkData, NodeType } from "./types/network";
+export type { NetworkNodeData, NetworkLinkData, NodeType, RelationEntry } from "./types/network";
 
 // Auth
 export { AuthProvider, useAuth, createAuthService, decodeJwtUser } from "./auth/index";

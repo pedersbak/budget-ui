@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
-import { NetworkNodeData, NetworkLinkData } from "../../types/network";
+import { NetworkNodeData, NetworkLinkData, RelationEntry } from "../../types/network";
 import { NetworkNode, NODE_SIZE } from "../NetworkNode/NetworkNode";
 import { NetworkLink } from "../NetworkLink/NetworkLink";
 import { RelationModal } from "../RelationModal/RelationModal";
@@ -52,7 +52,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   );
 
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
-  const [modalLabels, setModalLabels] = useState<string[] | null>(null);
+  const [modalRelations, setModalRelations] = useState<RelationEntry[] | null>(null);
 
   // Track whether the pointer moved enough to count as a drag (suppress click).
   const didDragRef = useRef(false);
@@ -89,6 +89,27 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     []
   );
 
+  const handleNodeTouchStart = useCallback(
+    (nodeId: string, e: React.TouchEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      didDragRef.current = false;
+      setPositions((prev) => {
+        const pos = prev[nodeId];
+        dragRef.current = {
+          nodeId,
+          startX: pos.x,
+          startY: pos.y,
+          startMouseX: touch.clientX,
+          startMouseY: touch.clientY,
+        };
+        return prev;
+      });
+      setDraggingNodeId(nodeId);
+    },
+    []
+  );
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (!dragRef.current) return;
@@ -96,6 +117,26 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         dragRef.current;
       const dx = e.clientX - startMouseX;
       const dy = e.clientY - startMouseY;
+      if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+        didDragRef.current = true;
+      }
+      setPositions((prev) => ({
+        ...prev,
+        [nodeId]: { x: startX + dx, y: startY + dy },
+      }));
+    },
+    []
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (!dragRef.current) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const { nodeId, startX, startY, startMouseX, startMouseY } =
+        dragRef.current;
+      const dx = touch.clientX - startMouseX;
+      const dy = touch.clientY - startMouseY;
       if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
         didDragRef.current = true;
       }
@@ -132,6 +173,9 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       onMouseMove={handleMouseMove}
       onMouseUp={stopDragging}
       onMouseLeave={stopDragging}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={stopDragging}
+      onTouchCancel={stopDragging}
     >
       {/* SVG layer — rendered first so it sits behind the node divs */}
       <svg
@@ -156,7 +200,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
               sourceY={source.y + half}
               targetX={target.x + half}
               targetY={target.y + half}
-              onMoreClick={setModalLabels}
+              onMoreClick={setModalRelations}
             />
           );
         })}
@@ -170,6 +214,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           isDragging={draggingNodeId === node.id}
           isPrimary={primaryNodeId !== undefined && node.id === primaryNodeId}
           onMouseDown={(e) => handleNodeMouseDown(node.id, e)}
+          onTouchStart={(e) => handleNodeTouchStart(node.id, e)}
           onMouseEnter={() => onNodeHover?.(node)}
           onMouseLeave={() => onNodeHover?.(null)}
           onClick={(n) => { if (!didDragRef.current) onNodeClick?.(n); }}
@@ -177,10 +222,10 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       ))}
 
       {/* Relation detail modal */}
-      {modalLabels && (
+      {modalRelations && (
         <RelationModal
-          labels={modalLabels}
-          onClose={() => setModalLabels(null)}
+          relations={modalRelations}
+          onClose={() => setModalRelations(null)}
         />
       )}
     </div>

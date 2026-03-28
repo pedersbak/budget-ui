@@ -55,6 +55,7 @@ export interface NetworkNodeProps {
   /** Whether this node is currently being dragged by the user. */
   isDragging?: boolean;
   onMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onTouchStart?: (e: React.TouchEvent<HTMLDivElement>) => void;
   /** Called when the node is clicked (not dragged). */
   onClick?: (node: NetworkNodeData) => void;
   /** Called when the pointer enters the node. */
@@ -79,6 +80,7 @@ export const NetworkNode: React.FC<NetworkNodeProps> = ({
   node,
   isDragging = false,
   onMouseDown,
+  onTouchStart,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -108,6 +110,7 @@ export const NetworkNode: React.FC<NetworkNodeProps> = ({
         transition: isDragging ? "none" : "transform 0.1s ease",
       }}
       onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={() => onClick?.(node)}
