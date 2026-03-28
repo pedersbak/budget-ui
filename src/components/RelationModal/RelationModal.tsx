@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { RelationEntry } from "../../types/network";
 
 export interface RelationModalProps {
@@ -28,7 +29,7 @@ export const RelationModal: React.FC<RelationModalProps> = ({ relations, onClose
 
   const isActive = (r: RelationEntry) => !r.to || new Date(r.to) > new Date();
 
-  return (
+  return createPortal(
     <div
       onClick={onClose}
       style={{
@@ -121,6 +122,7 @@ export const RelationModal: React.FC<RelationModalProps> = ({ relations, onClose
           })}
         </ul>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

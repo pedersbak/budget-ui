@@ -41,6 +41,12 @@ export const NetworkLink: React.FC<NetworkLinkProps> = ({
     onMoreClick?.(allRelations);
   };
 
+  const handlePillTouch = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    // Only fire if the touch didn't move (i.e. it's a tap, not a drag)
+    onMoreClick?.(allRelations);
+  };
+
   // Pill width constants
   const LABEL_PAD = 10;
   const PILL_H = 18;
@@ -66,6 +72,7 @@ export const NetworkLink: React.FC<NetworkLinkProps> = ({
       {firstLabel && (
         <g
           onClick={handlePillClick}
+          onTouchEnd={handlePillTouch}
           style={{ pointerEvents: "all", cursor: "pointer" }}
         >
           {/* Main label pill — always clickable */}
