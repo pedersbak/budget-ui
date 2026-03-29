@@ -11,6 +11,8 @@ export { LoginForm } from "./components/LoginForm/LoginForm";
 export { RegisterForm } from "./components/RegisterForm/RegisterForm";
 export { RelationModal } from "./components/RelationModal/RelationModal";
 export { NetworkIcon } from "./components/NetworkIcon/NetworkIcon";
+export { ReportModal } from "./components/ReportModal/ReportModal";
+export { AiReportButton } from "./components/AiReportButton/AiReportButton";
 
 // Network graph prop types
 export type { NetworkGraphProps } from "./components/NetworkGraph/NetworkGraph";
