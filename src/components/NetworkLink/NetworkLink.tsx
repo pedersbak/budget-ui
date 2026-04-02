@@ -1,5 +1,5 @@
 import React from "react";
-import { NetworkLinkData } from "../../types/network";
+import { NetworkLinkData, RelationEntry } from "../../types/network";
 
 export interface NetworkLinkProps {
   link: NetworkLinkData;
@@ -7,8 +7,8 @@ export interface NetworkLinkProps {
   sourceY: number;
   targetX: number;
   targetY: number;
-  /** Called when the user clicks the overflow "(+N)" pill. */
-  onMoreClick?: (labels: string[]) => void;
+  /** Called when the user clicks a label pill. Passes all relation entries for this link. */
+  onMoreClick?: (relations: RelationEntry[]) => void;
 }
 
 export const NetworkLink: React.FC<NetworkLinkProps> = ({
@@ -23,20 +23,28 @@ export const NetworkLink: React.FC<NetworkLinkProps> = ({
   const midY = (sourceY + targetY) / 2;
   const stroke = link.color ?? "#2a3347";
 
-  // Normalise: prefer the labels array, fall back to legacy label string
-  const allLabels: string[] = link.labels?.length
-    ? link.labels
+  // Build structured relation entries: prefer link.relations, fall back to labels/label strings
+  const allRelations: RelationEntry[] = link.relations?.length
+    ? link.relations
+    : link.labels?.length
+    ? link.labels.map((l) => ({ label: l, from: null, to: null }))
     : link.label
-    ? [link.label]
+    ? [{ label: link.label, from: null, to: null }]
     : [];
 
-  const firstLabel = allLabels[0];
-  const extraCount = allLabels.length - 1;
+  const firstLabel = allRelations[0]?.label;
+  const extraCount = allRelations.length - 1;
   const hasMore = extraCount > 0;
 
-  const handleMoreClick = (e: React.MouseEvent) => {
+  const handlePillClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onMoreClick?.(allLabels);
+    onMoreClick?.(allRelations);
+  };
+
+  const handlePillTouch = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    // Only fire if the touch didn't move (i.e. it's a tap, not a drag)
+    onMoreClick?.(allRelations);
   };
 
   // Pill width constants
@@ -57,12 +65,17 @@ export const NetworkLink: React.FC<NetworkLinkProps> = ({
         y2={targetY}
         stroke={stroke}
         strokeWidth={link.strokeWidth ?? 2}
+        strokeDasharray={link.strokeDasharray}
         strokeLinecap="round"
       />
 
       {firstLabel && (
-        <g style={{ pointerEvents: "all" }}>
-          {/* Main label pill */}
+        <g
+          onClick={handlePillClick}
+          onTouchEnd={handlePillTouch}
+          style={{ pointerEvents: "all", cursor: "pointer" }}
+        >
+          {/* Main label pill — always clickable */}
           <rect
             x={midX - labelW / 2}
             y={midY - PILL_H / 2}
@@ -87,10 +100,7 @@ export const NetworkLink: React.FC<NetworkLinkProps> = ({
 
           {/* Overflow pill — only shown when there are more relations */}
           {hasMore && (
-            <g
-              onClick={handleMoreClick}
-              style={{ cursor: "pointer" }}
-            >
+            <g>
               <rect
                 x={midX + labelW / 2 + 3}
                 y={midY - PILL_H / 2}

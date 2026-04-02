@@ -22,6 +22,18 @@ export interface NetworkNodeData {
 }
 
 /**
+ * A single relation entry between two nodes, with optional validity dates.
+ */
+export interface RelationEntry {
+  /** The relation label (e.g. "Direktør"). */
+  label: string;
+  /** ISO date string for when the relation became valid. Null if unknown. */
+  from: string | null;
+  /** ISO date string for when the relation expired. Null if still active. */
+  to: string | null;
+}
+
+/**
  * Data describing a directed link between two nodes.
  */
 export interface NetworkLinkData {
@@ -39,4 +51,8 @@ export interface NetworkLinkData {
   color?: string;
   /** Stroke width in pixels. Defaults to 2. */
   strokeWidth?: number;
+  /** SVG stroke-dasharray value. Use e.g. "6 3" for a dashed line. */
+  strokeDasharray?: string;
+  /** Structured relation entries with validity dates. Preferred over labels[]. */
+  relations?: RelationEntry[];
 }

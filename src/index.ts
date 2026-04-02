@@ -38,7 +38,7 @@ export type { MobileCardViewProps } from "./components/MobileCardView/MobileCard
 export type { MobileRadialViewProps } from "./components/MobileRadialView/MobileRadialView";
 
 // Network data types
-export type { NetworkNodeData, NetworkLinkData, NodeType } from "./types/network";
+export type { NetworkNodeData, NetworkLinkData, NodeType, RelationEntry } from "./types/network";
 
 // Auth
 export { AuthProvider, useAuth, createAuthService, decodeJwtUser } from "./auth/index";
@@ -52,3 +52,4 @@ export type {
   AuthServiceConfig,
   AuthService,
 } from "./auth/index";
+

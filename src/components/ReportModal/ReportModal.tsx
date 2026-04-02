@@ -63,17 +63,39 @@ function renderMarkdown(md: string): React.ReactNode[] {
     if (tableLines.length === 0) return;
     // First line = header, then separator, then body rows
     const [headerLine, , ...bodyLines] = tableLines;
-    const headers = parseTableRow(headerLine ?? "");
-    const rows = bodyLines.map(parseTableRow);
+    const allHeaders = parseTableRow(headerLine ?? "");
+
+    // Columns to suppress — too wide for mobile.
+    // Normalise header: lowercase, collapse all whitespace variants to a
+    // single space, then check startsWith so "Stemmeret %", "Stemmeret%" etc.
+    // are all caught regardless of encoding.
+    const HIDDEN_PREFIXES = ["stemmeret", "stemme", "organ"];
+    const normalise = (h: string) =>
+      h.toLowerCase().replace(/[\s\u00a0\u202f]+/g, " ").trim();
+    const isHidden = (h: string) =>
+      HIDDEN_PREFIXES.some((p) => normalise(h).startsWith(p));
+
+    const visibleIdx = allHeaders
+      .map((h, i) => ({ h, i }))
+      .filter(({ h }) => !isHidden(h))
+      .map(({ i }) => i);
+
+    const headers = visibleIdx.map((i) => allHeaders[i]);
+    const rows = bodyLines.map((line) => {
+      const all = parseTableRow(line);
+      return visibleIdx.map((i) => all[i] ?? "");
+    });
     elements.push(
       <div
         key={key()}
         style={{
+          width: "100%",
           overflowX: "auto",
           WebkitOverflowScrolling: "touch",
           margin: "0.5rem 0 1rem",
-          borderRadius: 6,
           border: "1px solid #21262d",
+          borderRadius: 6,
+          boxSizing: "border-box",
         } as React.CSSProperties}
       >
         <table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%", minWidth: "max-content" }}>
@@ -263,17 +285,16 @@ export const ReportModal: React.FC<ReportModalProps> = ({ title, markdown, onClo
           style={{
             flex: 1,
             minHeight: 0,
+            // minWidth:0 overrides flex's default min-width:auto — without it
+            // the flex child expands to fit content, making width:100% on the
+            // table wrapper resolve to a value wider than the screen.
+            minWidth: 0,
+            width: "100%",
             overflowY: "auto",
-            overflowX: "hidden",
             overscrollBehavior: "contain",
             WebkitOverflowScrolling: "touch",
             padding: "1rem 1.25rem",
-            // Extra bottom padding for iOS home indicator
             paddingBottom: "max(2.5rem, env(safe-area-inset-bottom, 2.5rem))",
-            // Prevent any stray content from breaking out horizontally
-            wordBreak: "break-word",
-            overflowWrap: "break-word",
-            maxWidth: "100%",
             boxSizing: "border-box",
           } as React.CSSProperties}
         >
