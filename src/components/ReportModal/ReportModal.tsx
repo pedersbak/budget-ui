@@ -32,11 +32,6 @@ function parseTableRow(line: string): string[] {
     .filter((_, i, arr) => i > 0 && i < arr.length - 1); // strip leading/trailing empty
 }
 
-/** Return true if the line is a separator row like |---|---| */
-function isTableSeparator(line: string): boolean {
-  return /^\|[\s|:-]+\|$/.test(line.trim());
-}
-
 function renderMarkdown(md: string): React.ReactNode[] {
   const lines = md.split("\n");
   const elements: React.ReactNode[] = [];
