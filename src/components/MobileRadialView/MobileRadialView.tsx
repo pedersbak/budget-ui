@@ -20,8 +20,10 @@ const CY = 200;       // SVG center y
 const INNER_R = 100;  // depth-1 ring radius
 const OUTER_R = 178;  // depth-2 ring radius
 const MAX_D2 = 28;    // cap outer-ring nodes to keep it readable
-// Extra space reserved around nodes for labels (generous estimate)
-const LABEL_PAD = 64;
+// Extra space reserved around nodes for labels.
+// SVG text doesn't affect layout bounding box, so we must over-estimate.
+// ~9 chars × ~7px/char per depth-2 label = ~63px; add circle radius + offset.
+const LABEL_PAD = 90;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -274,20 +276,27 @@ export const MobileRadialView: React.FC<MobileRadialViewProps> = ({
         ← Kortvisning
       </button>
 
-      {/* SVG radial graph — scrollable wrapper so nothing clips */}
+      {/* Relative-positioned flex remainder — SVG fills it absolutely so it
+          always fits within the available space with no clipping. */}
       <div
         style={{
           flex: 1,
           minHeight: 0,
-          overflowY: "auto",
-          overflowX: "hidden",
-          WebkitOverflowScrolling: "touch",
-        } as React.CSSProperties}
+          position: "relative",
+          overflow: "hidden",
+        }}
       >
         <svg
           viewBox={viewBox}
           width="100%"
-          style={{ display: "block", touchAction: "manipulation" }}
+          height="100%"
+          preserveAspectRatio="xMidYMid meet"
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "block",
+            touchAction: "manipulation",
+          }}
           xmlns="http://www.w3.org/2000/svg"
         >
         {/* Guide circles (dashed rings) */}
