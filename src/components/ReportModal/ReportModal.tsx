@@ -1,4 +1,23 @@
-import React from "react";
+import React, { useEffect } from "react";
+
+const SCROLL_STYLE_ID = "iris-report-scrollbar";
+
+function injectScrollbarStyles() {
+  if (typeof document === "undefined" || document.getElementById(SCROLL_STYLE_ID)) return;
+  const el = document.createElement("style");
+  el.id = SCROLL_STYLE_ID;
+  el.textContent = `
+    .iris-report-body::-webkit-scrollbar { width: 5px; }
+    .iris-report-body::-webkit-scrollbar-track { background: transparent; }
+    .iris-report-body::-webkit-scrollbar-thumb { background: #2a3347; border-radius: 99px; }
+    .iris-report-body::-webkit-scrollbar-thumb:hover { background: #4f9cf9; }
+    .iris-report-table::-webkit-scrollbar { height: 4px; }
+    .iris-report-table::-webkit-scrollbar-track { background: transparent; }
+    .iris-report-table::-webkit-scrollbar-thumb { background: #2a3347; border-radius: 99px; }
+    .iris-report-table::-webkit-scrollbar-thumb:hover { background: #4f9cf9; }
+  `;
+  document.head.appendChild(el);
+}
 
 export interface ReportModalProps {
   title: string;
@@ -76,24 +95,35 @@ function renderMarkdown(md: string): React.ReactNode[] {
       .map(({ i }) => i);
 
     const headers = visibleIdx.map((i) => allHeaders[i]);
-    const rows = bodyLines.map((line) => {
-      const all = parseTableRow(line);
-      return visibleIdx.map((i) => all[i] ?? "");
-    });
+    const allRows = bodyLines
+      .filter((l) => l.trim() !== "" && !l.trim().match(/^[\s|:-]+$/))
+      .map((line) => {
+        const all = parseTableRow(line);
+        return visibleIdx.map((i) => all[i] ?? "");
+      });
+
+    // If there's a "Periode til" column, sort current rows (d.d.) above historic.
+    const periodeTilIdx = headers.findIndex((h) => normalise(h) === "periode til");
+    let currentRows = allRows;
+    let historicRows: string[][] = [];
+    if (periodeTilIdx !== -1) {
+      currentRows = allRows.filter((r) => (r[periodeTilIdx] ?? "").trim().toLowerCase() === "d.d.");
+      historicRows = allRows.filter((r) => (r[periodeTilIdx] ?? "").trim().toLowerCase() !== "d.d.");
+    }
     elements.push(
       <div
         key={key()}
+        className="iris-report-table"
         style={{
           width: "100%",
-          overflowX: "auto",
-          WebkitOverflowScrolling: "touch",
           margin: "0.5rem 0 1rem",
           border: "1px solid #21262d",
           borderRadius: 6,
           boxSizing: "border-box",
+          overflow: "hidden",
         } as React.CSSProperties}
       >
-        <table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%", minWidth: "max-content" }}>
+        <table style={{ borderCollapse: "collapse", fontSize: 13, width: "100%", tableLayout: "fixed" }}>
           <thead>
             <tr>
               {headers.map((h, i) => (
@@ -107,6 +137,8 @@ function renderMarkdown(md: string): React.ReactNode[] {
                     background: "#161b27",
                     borderBottom: "1px solid #21262d",
                     whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   {h}
@@ -115,17 +147,40 @@ function renderMarkdown(md: string): React.ReactNode[] {
             </tr>
           </thead>
           <tbody>
-            {rows.map((cells, ri) => (
-              <tr key={ri} style={{ borderBottom: "1px solid #1a2030" }}>
-                {cells.map((cell, ci) => (
-                  <td
-                    key={ci}
-                    style={{
-                      padding: "6px 10px",
-                      color: "#c9d1d9",
-                      verticalAlign: "top",
-                    }}
-                  >
+            {currentRows.map((cells: string[], ri: number) => (
+              <tr key={`c-${ri}`} style={{ borderBottom: "1px solid #1a2030" }}>
+                {cells.map((cell: string, ci: number) => (
+                  <td key={ci} style={{ padding: "6px 10px", color: "#c9d1d9", verticalAlign: "middle", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 0 }}>
+                    {renderInline(cell)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {historicRows.length > 0 && currentRows.length > 0 && (
+              <tr>
+                <td
+                  colSpan={headers.length}
+                  style={{
+                    padding: "5px 10px",
+                    background: "#0d1117",
+                    borderTop: "1px solid #2a3347",
+                    borderBottom: "1px solid #2a3347",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ flex: 1, height: 1, background: "#2a3347" }} />
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#7c6f3e", letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                      Historisk
+                    </span>
+                    <div style={{ flex: 1, height: 1, background: "#2a3347" }} />
+                  </div>
+                </td>
+              </tr>
+            )}
+            {historicRows.map((cells: string[], ri: number) => (
+              <tr key={`h-${ri}`} style={{ borderBottom: "1px solid #1a2030" }}>
+                {cells.map((cell: string, ci: number) => (
+                  <td key={ci} style={{ padding: "6px 10px", color: "#a0aab8", verticalAlign: "middle", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 0 }}>
                     {renderInline(cell)}
                   </td>
                 ))}
@@ -198,6 +253,12 @@ function renderMarkdown(md: string): React.ReactNode[] {
 // ---------------------------------------------------------------------------
 
 export const ReportModal: React.FC<ReportModalProps> = ({ title, markdown, onClose }) => {
+  useEffect(() => { injectScrollbarStyles(); }, []);
+
+  // Detect desktop: viewports wider than 640px get a centered dialog instead
+  // of the mobile bottom-sheet.
+  const isDesktop = typeof window !== "undefined" && window.innerWidth > 640;
+
   return (
     <div
       style={{
@@ -206,7 +267,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({ title, markdown, onClo
         zIndex: 1000,
         background: "rgba(0,0,0,0.65)",
         display: "flex",
-        alignItems: "flex-end",
+        alignItems: isDesktop ? "center" : "flex-end",
+        justifyContent: "center",
+        padding: isDesktop ? "2rem" : 0,
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -215,23 +278,27 @@ export const ReportModal: React.FC<ReportModalProps> = ({ title, markdown, onClo
       <div
         style={{
           width: "100%",
-          maxWidth: "100vw",
-          maxHeight: "92dvh",
+          maxWidth: isDesktop ? "min(90vw, 1100px)" : "100vw",
+          maxHeight: isDesktop ? "85vh" : "92dvh",
           background: "#0d1117",
-          borderRadius: "16px 16px 0 0",
+          borderRadius: isDesktop ? 12 : "16px 16px 0 0",
           border: "1px solid #21262d",
-          borderBottom: "none",
+          borderBottom: isDesktop ? "1px solid #21262d" : "none",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          boxShadow: "0 -8px 40px rgba(0,0,0,0.6)",
+          boxShadow: isDesktop
+            ? "0 8px 48px rgba(0,0,0,0.7)"
+            : "0 -8px 40px rgba(0,0,0,0.6)",
           boxSizing: "border-box",
         }}
       >
-        {/* Drag handle */}
-        <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 4px" }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: "#2a3347" }} />
-        </div>
+        {/* Drag handle — mobile only */}
+        {!isDesktop && (
+          <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 4px" }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: "#2a3347" }} />
+          </div>
+        )}
 
         {/* Header */}
         <div
@@ -277,6 +344,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ title, markdown, onClo
 
         {/* Scrollable body */}
         <div
+          className="iris-report-body"
           style={{
             flex: 1,
             minHeight: 0,

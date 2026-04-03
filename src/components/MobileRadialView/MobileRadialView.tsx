@@ -131,13 +131,12 @@ function buildLayout(
     d1Angles.set(n.id, angle);
   });
 
-  // Depth-2: group by parent, then sub-arc around parent's angle
-  const d2ByParent = new Map<string, NetworkNodeData[]>();
-  d2Nodes.forEach((n) => {
-    const parentId = parents.get(n.id);
-    if (!parentId) return;
-    if (!d2ByParent.has(parentId)) d2ByParent.set(parentId, []);
-    d2ByParent.get(parentId)!.push(n);
+  // Depth-2: sort by parent's angle so related nodes sit near each other,
+  // then distribute evenly around the full outer ring.
+  d2Nodes.sort((a, b) => {
+    const pa = d1Angles.get(parents.get(a.id) ?? "") ?? 0;
+    const pb = d1Angles.get(parents.get(b.id) ?? "") ?? 0;
+    return pa - pb;
   });
 
   // Build positions map
@@ -171,26 +170,17 @@ function buildLayout(
     });
   });
 
-  // Depth-2: sub-arc per parent
-  d2ByParent.forEach((children, parentId) => {
-    const parentAngle = d1Angles.get(parentId) ?? 0;
-    // Adaptive spread: more children → wider arc, but cap at ~110°
-    const spread = Math.min((Math.PI * 110) / 180, (children.length * Math.PI) / 8);
-    children.forEach((child, j) => {
-      const offset =
-        children.length > 1
-          ? (j / (children.length - 1) - 0.5) * spread
-          : 0;
-      const angle = parentAngle + offset;
-      positions.set(child.id, {
-        id: child.id,
-        x: CX + OUTER_R * Math.cos(angle),
-        y: CY + OUTER_R * Math.sin(angle),
-        r: 12,
-        depth: 2,
-        type: child.type,
-        label: child.label,
-      });
+  // Depth-2: evenly distributed around the full outer ring (already sorted by parent angle)
+  d2Nodes.forEach((n, i) => {
+    const angle = (2 * Math.PI * i) / d2Nodes.length - Math.PI / 2;
+    positions.set(n.id, {
+      id: n.id,
+      x: CX + OUTER_R * Math.cos(angle),
+      y: CY + OUTER_R * Math.sin(angle),
+      r: 12,
+      depth: 2,
+      type: n.type,
+      label: n.label,
     });
   });
 
@@ -204,7 +194,7 @@ function buildLayout(
       x2: positions.get(l.targetId)!.x,
       y2: positions.get(l.targetId)!.y,
       // Historic edges are typically colored gold
-      historic: l.color === "#a89450",
+      historic: l.color === "#7c6f3e",
     }));
 
   // Compute a tight viewBox so nothing ever clips on any screen size
