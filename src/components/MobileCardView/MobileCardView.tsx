@@ -10,6 +10,8 @@ export interface MobileCardViewProps {
   onNavigate: (nodeId: string) => void;
   /** Called when the user taps "Vis graf" — switches to radial view. */
   onShowRadial: () => void;
+  /** When true the "Vis graf" button is hidden — useful in desktop contexts that already show a graph. */
+  hideRadialButton?: boolean;
   /** Optional action rendered in the focused-node header (e.g. AiReportButton). */
   actionSlot?: React.ReactNode;
 }
@@ -40,6 +42,7 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
   links,
   onNavigate,
   onShowRadial,
+  hideRadialButton,
   actionSlot,
 }) => {
   const rootNode = nodes.find((n) => n.id === rootId);
@@ -179,24 +182,26 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
 
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {actionSlot}
-          <button
-            onClick={onShowRadial}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "5px 11px",
-              borderRadius: 6,
-              border: "1px solid #2a3347",
-              background: "#0d1117",
-              color: "#8892a4",
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: 600,
-            }}
-          >
-            <span style={{ fontSize: 11 }}>◎</span> Vis graf
-          </button>
+          {!hideRadialButton && (
+            <button
+              onClick={onShowRadial}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "5px 11px",
+                borderRadius: 6,
+                border: "1px solid #2a3347",
+                background: "#0d1117",
+                color: "#8892a4",
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              <span style={{ fontSize: 11 }}>◎</span> Vis graf
+            </button>
+          )}
         </div>
       </div>
 

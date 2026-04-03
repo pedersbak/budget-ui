@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { NetworkNodeData, NetworkLinkData, RelationEntry } from "../../types/network";
 import { NetworkNode, NODE_SIZE } from "../NetworkNode/NetworkNode";
 import { NetworkLink } from "../NetworkLink/NetworkLink";
@@ -44,12 +44,28 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   style,
   className,
 }) => {
-  // Node positions are seeded from props and owned by this component.
+  // Seed positions from props on mount only.
   const [positions, setPositions] = useState<
     Record<string, { x: number; y: number }>
   >(() =>
     Object.fromEntries(initialNodes.map((n) => [n.id, { x: n.x, y: n.y }]))
   );
+
+  // When new nodes arrive (e.g. from incremental graph expansion), add them to
+  // positions without touching nodes that already exist (preserves drag state).
+  useEffect(() => {
+    setPositions((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const n of initialNodes) {
+        if (!(n.id in next)) {
+          next[n.id] = { x: n.x, y: n.y };
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [initialNodes]);
 
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
   const [modalRelations, setModalRelations] = useState<RelationEntry[] | null>(null);
