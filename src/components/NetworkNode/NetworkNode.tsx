@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import { NetworkNodeData } from "../../types/network";
 
 /** Width and height of the circular icon area in pixels. Exported so NetworkGraph can compute link anchor points. */
@@ -87,6 +88,8 @@ export const NetworkNode: React.FC<NetworkNodeProps> = ({
   isPrimary = false,
 }) => {
   const { bg, border } = getNodeColors(node.type);
+  const [hovered, setHovered] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (isPrimary) ensurePulseKeyframes();
@@ -111,10 +114,34 @@ export const NetworkNode: React.FC<NetworkNodeProps> = ({
       }}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
+      onMouseEnter={() => { setHovered(true); onMouseEnter?.(); }}
+      onMouseLeave={() => { setHovered(false); onMouseLeave?.(); }}
       onClick={() => onClick?.(node)}
     >
+      {hovered && ReactDOM.createPortal(
+        <div style={{
+          position: "fixed",
+          left: mousePos.x + 14,
+          top: mousePos.y - 10,
+          background: "#1e2638",
+          border: "1px solid #2a3347",
+          borderRadius: 7,
+          padding: "6px 10px",
+          pointerEvents: "none",
+          zIndex: 99999,
+          maxWidth: 260,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", lineHeight: 1.4 }}>
+            {node.label}
+          </div>
+          <div style={{ fontSize: 11, color: "#8892a4", marginTop: 2 }}>
+            CVR: {node.id}
+          </div>
+        </div>,
+        document.body,
+      )}
       {/* Icon circle */}
       <div
         style={{

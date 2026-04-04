@@ -22,6 +22,12 @@ export interface NetworkGraphProps {
    * Opt-in: has no effect unless set.
    */
   primaryNodeId?: string;
+  /**
+   * Increment this value to force a full reset of all node positions from props.
+   * Use after a layout API call so the graph reflects the new coordinates.
+   * When falsy (0 / undefined) the component only adds positions for new nodes.
+   */
+  layoutRevision?: number;
   style?: React.CSSProperties;
   className?: string;
 }
@@ -41,6 +47,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   onNodeClick,
   onNodeHover,
   primaryNodeId,
+  layoutRevision,
   style,
   className,
 }) => {
@@ -51,21 +58,27 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     Object.fromEntries(initialNodes.map((n) => [n.id, { x: n.x, y: n.y }]))
   );
 
-  // When new nodes arrive (e.g. from incremental graph expansion), add them to
-  // positions without touching nodes that already exist (preserves drag state).
+  // When layoutRevision is non-zero, the layout API has produced new coordinates
+  // for all nodes — reset every position from props so the graph is consistent.
+  // Otherwise (incremental adds) only add positions for nodes that don't exist yet
+  // so existing drag state is preserved.
   useEffect(() => {
-    setPositions((prev) => {
-      let changed = false;
-      const next = { ...prev };
-      for (const n of initialNodes) {
-        if (!(n.id in next)) {
-          next[n.id] = { x: n.x, y: n.y };
-          changed = true;
+    if (layoutRevision) {
+      setPositions(Object.fromEntries(initialNodes.map((n) => [n.id, { x: n.x, y: n.y }])));
+    } else {
+      setPositions((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const n of initialNodes) {
+          if (!(n.id in next)) {
+            next[n.id] = { x: n.x, y: n.y };
+            changed = true;
+          }
         }
-      }
-      return changed ? next : prev;
-    });
-  }, [initialNodes]);
+        return changed ? next : prev;
+      });
+    }
+  }, [initialNodes, layoutRevision]);
 
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
   const [modalRelations, setModalRelations] = useState<RelationEntry[] | null>(null);
