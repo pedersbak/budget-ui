@@ -130,11 +130,12 @@ export function BudgetDetailPage() {
   const [loading, setLoading] = useState(true);
   const [rebalancing, setRebalancing] = useState(false);
   const [error, setError] = useState<unknown>();
-  const load = useCallback(async () => {
-    setLoading(true); setError(undefined);
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    setError(undefined);
     try { setBudget(await api.getBudget(budgetId)); }
     catch (reason) { setError(reason); }
-    finally { setLoading(false); }
+    finally { if (showLoading) setLoading(false); }
   }, [api, budgetId]);
   useEffect(() => { void load(); }, [load]);
   const rebalance = async () => {
@@ -145,7 +146,7 @@ export function BudgetDetailPage() {
     } catch (reason) { setError(reason); }
     finally { setRebalancing(false); }
   };
-  const refreshAfterPayment = async () => { setResult(undefined); await load(); };
+  const refreshAfterPayment = async () => { setResult(undefined); await load(false); };
   const projection = useMemo(() => result ?? (budget ? projectBudget(budget) : null), [budget, result]);
   if (loading) return <LoadingState />;
   if (error && !budget) return <div className="page"><ErrorState title={t('loadError')} error={error} onRetry={load} /></div>;

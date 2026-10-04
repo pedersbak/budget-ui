@@ -161,6 +161,10 @@ h3 { font-size: 1rem; }
 .payment-row__main, .payment-row__amount { display: flex; flex-direction: column; gap: 5px; }
 .payment-row__main > span, .payment-row__main > small, .payment-row__amount small { color: var(--faint); font-size: .67rem; line-height: 1.4; }
 .payment-row__account { display: flex; align-items: start; gap: 5px; flex-wrap: wrap; }
+.payment-account-toggle { appearance: none; font: inherit; cursor: pointer; }
+.payment-account-toggle:hover:not(:disabled) { filter: brightness(1.15); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent); }
+.payment-account-toggle:disabled { cursor: wait; opacity: .65; }
+.payment-row:focus { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: -2px; }
 .payment-row__amount { text-align: right; }
 .payment-row__actions { display: flex; }
 .month-picker { margin: 0; padding: 0; border: 0; }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import type { FormEvent } from 'react';
-import { ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
+import type { FormEvent, SyntheticEvent } from 'react';
+import { ArrowLeftRight, ChevronRight, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTemplate } from '../template/context';
 import { Alert, Badge, Button, Card, EmptyState, Input, Modal, Select, Textarea } from '../template/ui';
 import { useBudgetApi } from './api';
@@ -17,9 +17,44 @@ export function PaymentManager({ budget, onChanged }: { budget: Budget; onChange
   const { locale, t } = useTemplate();
   const [editing, setEditing] = useState<RecurringPayment | 'new' | null>(null);
   const [deleting, setDeleting] = useState('');
+  const [moving, setMoving] = useState('');
   const [error, setError] = useState<unknown>();
   const groups = useMemo(() => groupPayments(budget.recurringPayments), [budget.recurringPayments]);
+  const [openCategories, setOpenCategories] = useState<Set<string>>(() => new Set(Object.keys(groups).slice(0, 3)));
   const money = (value: number) => formatMoney(value, budget.currency, locale === 'da' ? 'da-DK' : 'en-US');
+  const keepCategoryOpen = (category: string) => setOpenCategories((current) => new Set(current).add(category));
+  const rememberGroupState = (category: string, event: SyntheticEvent<HTMLDetailsElement>) => {
+    const isOpen = event.currentTarget.open;
+    setOpenCategories((current) => {
+      if (current.has(category) === isOpen) return current;
+      const next = new Set(current);
+      if (isOpen) next.add(category); else next.delete(category);
+      return next;
+    });
+  };
+  const returnToPayment = (paymentId: string) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const row = document.getElementById(`payment-${paymentId}`);
+      row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      row?.focus({ preventScroll: true });
+    }));
+  };
+  const paymentChanged = async (payment: RecurringPayment) => {
+    keepCategoryOpen(payment.category);
+    setEditing(null);
+    await onChanged();
+    returnToPayment(payment.id);
+  };
+  const movePayment = async (payment: RecurringPayment) => {
+    const account = payment.account === 'BudgetAccount' ? 'DailyAccount' : 'BudgetAccount';
+    setMoving(payment.id); setError(undefined); keepCategoryOpen(payment.category);
+    try {
+      const updated = await api.updatePayment(budget.id, payment.id, { ...toDraft(payment), account });
+      await onChanged();
+      returnToPayment(updated.id);
+    } catch (reason) { setError(reason); }
+    finally { setMoving(''); }
+  };
   const remove = async (payment: RecurringPayment) => {
     if (!globalThis.confirm(t('confirmDeletePayment'))) return;
     setDeleting(payment.id); setError(undefined);
@@ -31,23 +66,25 @@ export function PaymentManager({ budget, onChanged }: { budget: Budget; onChange
     <div className="section-heading"><div><h2>{t('recurringPayments')}</h2><p className="ui-muted">{t('paymentsBody')}</p></div><Button size="sm" icon={<Plus size={15} />} onClick={() => setEditing('new')}>{t('addPayment')}</Button></div>
     {Boolean(error) && <Alert variant="danger" onDismiss={() => setError(undefined)}>{error instanceof Error ? error.message : t('loadError')}</Alert>}
     {Object.keys(groups).length === 0 ? <EmptyState title={t('noPayments')} description={t('noPaymentsBody')} action={<Button onClick={() => setEditing('new')}>{t('addPayment')}</Button>} /> :
-      <div className="payment-groups">{Object.entries(groups).map(([category, payments], index) => {
+      <div className="payment-groups">{Object.entries(groups).map(([category, payments]) => {
         const total = payments.reduce((sum, payment) => sum + annualPaymentTotal(payment), 0);
-        return <details className="payment-group" key={category} open={index < 3}>
+        return <details className="payment-group" key={category} open={openCategories.has(category)} onToggle={(event) => rememberGroupState(category, event)}>
           <summary><ChevronRight size={17} /><span><strong>{category}</strong><small>{payments.length} · {money(total)} {t('annualTotal')}</small></span><strong>{money(total / 12)} <small>{t('monthlyAverage')}</small></strong></summary>
-          <div className="payment-list">{payments.map((payment) => <article className={`payment-row${payment.isActive ? '' : ' payment-row--inactive'}`} key={payment.id}>
+          <div className="payment-list">{payments.map((payment) => {
+            const targetAccount = payment.account === 'BudgetAccount' ? t('dailyAccount') : t('budgetAccount');
+            return <article id={`payment-${payment.id}`} tabIndex={-1} className={`payment-row${payment.isActive ? '' : ' payment-row--inactive'}`} key={payment.id}>
             <div className="payment-row__main"><strong>{payment.name}</strong><span>{frequencyLabel(payment.frequency, t)} · {monthsLabel(payment, locale)}</span>{payment.notes && <small>{payment.notes}</small>}</div>
-            <div className="payment-row__account"><Badge variant={payment.account === 'BudgetAccount' ? 'info' : 'neutral'}>{payment.account === 'BudgetAccount' ? t('budgetAccount') : t('dailyAccount')}</Badge><Badge variant={payment.isActive ? 'success' : 'warning'}>{payment.isActive ? t('activeLabel') : t('inactiveLabel')}</Badge></div>
+            <div className="payment-row__account"><button className={`ui-badge payment-account-toggle ui-badge--${payment.account === 'BudgetAccount' ? 'info' : 'neutral'}`} disabled={moving === payment.id} title={t('movePaymentAccount', { name: payment.name, account: targetAccount })} aria-label={t('movePaymentAccount', { name: payment.name, account: targetAccount })} onClick={() => void movePayment(payment)}>{moving === payment.id ? <Loader2 className="ui-spin" size={12} /> : <ArrowLeftRight size={12} />}{payment.account === 'BudgetAccount' ? t('budgetAccount') : t('dailyAccount')}</button><Badge variant={payment.isActive ? 'success' : 'warning'}>{payment.isActive ? t('activeLabel') : t('inactiveLabel')}</Badge></div>
             <div className="payment-row__amount"><strong>{money(payment.amount)}</strong><small>{money(annualPaymentTotal(payment))} / {t('annualTotal')}</small></div>
             <div className="payment-row__actions"><Button size="sm" variant="ghost" icon={<Pencil size={14} />} onClick={() => setEditing(payment)}>{t('edit')}</Button><Button size="sm" variant="ghost" icon={<Trash2 size={14} />} loading={deleting === payment.id} onClick={() => void remove(payment)}>{t('deletePayment')}</Button></div>
-          </article>)}</div>
+          </article>; })}</div>
         </details>;
       })}</div>}
-    <PaymentModal key={`${budget.id}-${editing === 'new' ? 'new' : editing?.id ?? 'closed'}`} budget={budget} payment={editing === 'new' ? undefined : editing ?? undefined} open={editing !== null} onClose={() => setEditing(null)} onSaved={async () => { setEditing(null); await onChanged(); }} />
+    <PaymentModal key={`${budget.id}-${editing === 'new' ? 'new' : editing?.id ?? 'closed'}`} budget={budget} payment={editing === 'new' ? undefined : editing ?? undefined} open={editing !== null} onClose={() => setEditing(null)} onSaved={paymentChanged} />
   </Card>;
 }
 
-function PaymentModal({ budget, payment, open, onClose, onSaved }: { budget: Budget; payment?: RecurringPayment; open: boolean; onClose: () => void; onSaved: () => Promise<void> }) {
+function PaymentModal({ budget, payment, open, onClose, onSaved }: { budget: Budget; payment?: RecurringPayment; open: boolean; onClose: () => void; onSaved: (payment: RecurringPayment) => Promise<void> }) {
   const api = useBudgetApi();
   const { locale, t } = useTemplate();
   const months = locale === 'da' ? MONTHS_DA : MONTHS_EN;
@@ -57,9 +94,10 @@ function PaymentModal({ budget, payment, open, onClose, onSaved }: { budget: Bud
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setSaving(true); setError(undefined);
     try {
-      if (payment) await api.updatePayment(budget.id, payment.id, draft);
-      else await api.createPayment(budget.id, draft);
-      await onSaved();
+      const saved = payment
+        ? await api.updatePayment(budget.id, payment.id, draft)
+        : await api.createPayment(budget.id, draft);
+      await onSaved(saved);
     } catch (reason) { setError(reason); }
     finally { setSaving(false); }
   };
