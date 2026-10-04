@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import DemoApp from './demo/DemoApp';
+import BudgetApp from './budget/BudgetApp';
 import './styles.css';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><DemoApp /></React.StrictMode>);
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><BudgetApp /></React.StrictMode>);

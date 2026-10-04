@@ -12,6 +12,7 @@ interface TemplateContextValue {
   login: (credentials: Credentials) => Promise<void>;
   register: (registration: Registration) => Promise<void>;
   logout: () => Promise<void>;
+  refreshSession: () => Promise<AuthSession>;
   setLocale: (locale: Locale) => void;
   setTheme: (theme: ThemeId) => void;
   assumeRole?: (role: 'user' | 'admin' | 'superadmin') => void;
@@ -59,6 +60,12 @@ export function TemplateProvider({ children, authAdapter, messages, defaultLocal
     if (result) setSession(result);
   }, [authAdapter]);
   const logout = useCallback(async () => { await authAdapter.logout(session); setSession(null); }, [authAdapter, session]);
+  const refreshSession = useCallback(async () => {
+    if (!session || !authAdapter.refresh) throw new Error('This session cannot be refreshed.');
+    const refreshed = await authAdapter.refresh(session);
+    setSession(refreshed);
+    return refreshed;
+  }, [authAdapter, session]);
   const setLocale = useCallback((next: Locale) => { localStorage.setItem('iris-locale', next); setLocaleState(next); }, []);
   const setTheme = useCallback((next: ThemeId) => { localStorage.setItem('iris-theme', next); setThemeState(next); }, []);
   const t = useCallback((key: string, values: Record<string, string | number> = {}) => {
@@ -68,7 +75,7 @@ export function TemplateProvider({ children, authAdapter, messages, defaultLocal
   }, [locale, messages]);
   const assumeRole = onAssumeRole ? (role: 'user' | 'admin' | 'superadmin') => setSession(onAssumeRole(role)) : undefined;
 
-  const value = useMemo(() => ({ session, authReady, locale, theme, t, login, register, logout, setLocale, setTheme, assumeRole }), [session, authReady, locale, theme, t, login, register, logout, setLocale, setTheme, assumeRole]);
+  const value = useMemo(() => ({ session, authReady, locale, theme, t, login, register, logout, refreshSession, setLocale, setTheme, assumeRole }), [session, authReady, locale, theme, t, login, register, logout, refreshSession, setLocale, setTheme, assumeRole]);
   return <TemplateContext.Provider value={value}>{children}</TemplateContext.Provider>;
 }
 

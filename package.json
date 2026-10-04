@@ -1,9 +1,9 @@
 {
-  "name": "iris-ui",
+  "name": "budget-ui",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "A product-neutral React application template and reusable UI system",
+  "description": "Responsive household budget manager for Budget API, built on Iris UI",
   "main": "dist/iris-ui.js",
   "types": "dist/index.d.ts",
   "exports": {

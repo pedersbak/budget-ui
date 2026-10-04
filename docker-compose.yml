@@ -1,9 +1,9 @@
 services:
-  iris-ui:
+  budget-ui:
     build:
       context: .
       args:
-        VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
     ports:
       - "4173:80"
     restart: unless-stopped
